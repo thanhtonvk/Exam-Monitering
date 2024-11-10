@@ -28,13 +28,13 @@ DEBUG = True
 
 # ALLOWED_HOSTS = []
 
-ALLOWED_HOSTS = ['https://web-production-f978b.up.railway.app']
+ALLOWED_HOSTS = ['https://web-production-4aa3.up.railway.app/']
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-CSRF_TRUSTED_ORIGINS = ['https://web-production-f978b.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://web-production-4aa3.up.railway.app/']
 
 # Cors settings 
 CORS_ALLOW_ALL_ORIGINS = True 
