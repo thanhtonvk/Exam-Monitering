@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} {{exam.title}} {% endblock title %}
+
+{% block content %}
+
+<div class="container p-3">
+    <div class="">
+        <input type="hidden" name="exam_id" id="exam_id" value="{{exam.id}}">
+        <h2 style="color: #FFBF61;font-size: 28px;">{{ exam.title }}</h2>
+        <p>Số lượng câu hỏi: {{counter}}</p>
+        <p style="display: flex;align-items: center;justify-content: space-between;"><span style="color: #222;font-weight: 700;font-size: 18px;">Player: {{request.user.username}}</span></p>
+        <p style="display: flex;align-items: center;justify-content: space-between;"><span id="countdown" style="display: block;font-size: 18px;font-weight: 700;color: #0D92F4;">15:00</span></p>
+        <form method="post" action="{% url 'exam' exam.id %}">
+            {% csrf_token %}
+            <div class="slider">
+                {% for question in exam.question_set.all %}
+                    <div class="slide">
+                        <h3 style="color: #333;font-size: 20px;margin-top: 12px;" class="mb-3">Phần I. Câu hỏi trắc nghiệm (4 đáp án)</h3>
+
+                        <p style="color: #FF6B6B; font-size: 18px; font-weight: bold; background-color: #FFF3E0; padding: 12px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                            Câu hỏi: {{ question.question_text }}
+                        </p>
+                        
+
+                        <input type="hidden" name="question_{{ question.id }}" value="">
+                        {% for answer in question.answer_set.all %}
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="{{ answer.id }}">
+                                <label class="form-check-label">
+                                    {{ answer.answer_text }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <!-- Phần câu hỏi đúng sai -->
+                <h3 style="color: #333;font-size: 20px;margin-top: 12px;" class="mb-3">Phần II. Câu hỏi đúng sai</h3>
+                {% for question in exam.questiontruefalse_set.all %}
+                    <div class="slide">
+                        <p style="color: #FF6B6B; font-size: 18px; font-weight: bold; background-color: #FFF3E0; padding: 12px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                            Câu hỏi: {{ question.question_text }}
+                        </p>
+                        {% for answer in question.answertruefalse_set.all %}
+                        <div class="form-check mb-3 d-flex align-items-center justify-content-start" style="gap: 24px;">
+                            <label class="form-check-label me-3">{{ answer.clause }}</label>
+                            <div>
+                                <input class="form-check-input me-2" type="radio" name="question_tf_{{ question.id }}_{{ answer.id }}" value="true">
+                                <label class="form-check-label me-3">Đúng</label>
+                            </div>
+                            <div>
+                                <input class="form-check-input me-2" type="radio" name="question_tf_{{ question.id }}_{{ answer.id }}" value="false">
+                                <label class="form-check-label">Sai</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <!-- Câu hỏi điền đáp án -->
+                {% for question in exam.questionfill_set.all %}
+                    <div class="slide">
+                        <h3 style="color: #333;font-size: 20px;margin-top: 12px;" class="mb-3">Phần III. Câu hỏi điền đáp án</h3>
+                        
+                        <p style="color: #FF6B6B; font-size: 18px; font-weight: bold; background-color: #FFF3E0; padding: 12px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                            Câu hỏi: {{ question.question_text }}
+                        </p>
+                        
+
+                        <input type="hidden" name="question_fill_{{ question.id }}" value="">
+                        <div class="mb-3">
+                            <label class="form-label">Điền vào đáp án</label>
+                            <input class="form-control" type="text" name="question_fill_{{ question.id }}">
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="controls">
+                <button type="button" class="btn btn-dark" onclick="prevSlide()">
+                    Prev
+                </button>
+                <button type="button" class="btn btn-primary" onclick="nextSlide()">
+                    Next
+                </button>
+                <button class="btn btn-success" type="submit">Nộp bài</button>
+                <button type="button" onclick="window.location.href = '/'" class="btn btn-dark">Trang chủ</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- <video style="position: absolute; top: 50px;right: 100px;width: 200px;height: 200px;" id="videoElement" autoplay muted></video> -->
+
+    <!-- Camera video -->
+    <div style="position: fixed; top: 20px; right: 20px; width: 150px; height: 150px; border: 3px solid #0D92F4; border-radius: 10px; overflow: hidden;">
+        <video id="videoElement" autoplay muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+    </div>
+
+    <script>
+        // Countdown timer (15 minutes)
+        let timeLeft = 15 * 60; // 15 minutes in seconds
+        const countdownElement = document.getElementById("countdown");
+
+        const timerInterval = setInterval(() => {
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            countdownElement.innerHTML = `${minutes}:${seconds}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById("examForm").submit(); // Auto-submit the form when time runs out
+            }
+            timeLeft -= 1;
+        }, 1000);
+    
+        
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        async function startVideoRecording() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const videoElement = document.getElementById('videoElement');
+            videoElement.srcObject = stream;
+
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp9',
+            });
+
+            // Khi có dữ liệu video mới, thêm vào mảng `recordedChunks`
+            mediaRecorder.ondataavailable = function(event) {
+                console.log(event.data.size);
+                
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            // Đặt sự kiện `onstop` để gửi video sau khi ghi xong
+            mediaRecorder.onstop = async function() {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const formData = new FormData();
+                formData.append('video_recording', blob, 'recorded_video.webm');
+
+                const examId = document.getElementById('exam_id').value;
+
+                await fetch(`/monitoring/upload_video/${examId}`, {
+                    method: 'POST',
+                    body: formData,
+                }).then(response => {
+                    if (response.ok) {
+                        console.log("Video uploaded successfully");
+                    } else {
+                        console.error("Failed to upload video");
+                    }
+                });
+            };
+
+            mediaRecorder.start(); // Bắt đầu ghi
+        }
+
+        // Khi submit form thì gọi `mediaRecorder.stop()` và chờ `onstop` xử lý tải lên
+        document.querySelector("form").onsubmit = async function(event) {
+            event.preventDefault(); // Ngăn form submit mặc định
+            mediaRecorder.stop(); // Kết thúc ghi, onstop sẽ xử lý tải lên
+            setTimeout(() => {
+                this.submit(); // Submit form sau khi tải lên hoàn tất
+            }, 1000); // Đặt độ trễ để đảm bảo việc tải lên hoàn tất
+        };
+
+        startVideoRecording(); // Bắt đầu ghi khi tải trang
+
+
+
+
+    </script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #E0F7FA, #FFEBEE);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            h2 {
+                font-size: 24px;
+            }
+            #videoElement {
+                width: 120px;
+                height: 120px;
+                top: 10px;
+                right: 10px;
+            }
+            #countdown {
+                font-size: 16px;
+            }
+        }
+    </style>
+
+</div>
+
+{% endblock content %}
