@@ -28,17 +28,16 @@ DEBUG = True
 
 # ALLOWED_HOSTS = []
 
-# Cho phép localhost và các domain cần thiết khác (nếu có)
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-# Bật bảo mật CSRF và Session cookies chỉ trong môi trường bảo mật
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Thiết lập nguồn tin cậy cho CSRF
-CSRF_TRUSTED_ORIGINS = ['http://localhost']
-
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost',
+    'http://127.0.0.1'
+]
 
 # Cors settings 
 CORS_ALLOW_ALL_ORIGINS = True 
